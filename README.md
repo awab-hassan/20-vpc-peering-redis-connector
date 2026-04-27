@@ -1,4 +1,4 @@
-# etc VPC Peering & Redis Connector Infrastructure
+# VPC Peering & Redis Connector Infrastructure
 
 A Terraform-based infrastructure project that establishes secure **multi-region AWS connectivity** between **Region 1 and Region 2** with a serverless **Lambda-based Redis connector API**. This enables the etc application running in Region 2 to securely access a centralized Redis cluster in Region 1 with low-latency, private network connectivity.
 
