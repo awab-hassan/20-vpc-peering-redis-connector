@@ -1,4 +1,4 @@
-# Variables for configurationss
+# Variables for configurationsssss
 variable "hongkong_vpc_cidr" {
   description = "CIDR block for the Region 2 VPC"
   type        = string
