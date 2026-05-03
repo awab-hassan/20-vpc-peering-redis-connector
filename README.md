@@ -1,6 +1,6 @@
 # Project # 20 - VPC Peering Redis Connector
 
-Terraform infrastructure that establishes private multi-region VPC peering between two AWS regions and deploys a VPC-attached Node.js Lambda function as a Redis connector API in the secondary region. The Lambda connects privately to an ElastiCache Redis cluster in the primary region over the peering connection, with no public network exposure.
+This Terraform module establishes secure, multi-region VPC peering, allowing a Node.js Lambda and API Gateway in a secondary region to privately query an ElastiCache Redis cluster in the primary region. Custom route tables ensure strict cross-region network isolation with zero public internet exposure.
 
 ## Architecture
 
