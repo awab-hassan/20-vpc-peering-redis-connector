@@ -1,69 +1,39 @@
-# Project # 20 - VPC Peering Redis Connector
+# Project 20: VPC Peering Redis Connector
 
-This Terraform module establishes secure, multi-region VPC peering, allowing a Node.js Lambda and API Gateway in a secondary region to privately query an ElastiCache Redis cluster in the primary region. Custom route tables ensure strict cross-region network isolation with zero public internet exposure.
+A Terraform module that sets up multi-region VPC peering and deploys a VPC-attached Node.js Lambda in the secondary region as a private connector to an ElastiCache Redis cluster running in the primary region. The Lambda is exposed through both an API Gateway REST endpoint and a direct Lambda Function URL. All cross-region traffic stays on AWS's private network with no public internet exposure.
+
+The Terraform is split into two layers: the network foundation (VPCs, subnets, peering, routes) and the application layer (Lambda, IAM, API Gateway). Keeping these separate makes it easier to reuse the network layer for other cross-region workloads.
 
 ## Architecture
 
-```
-Region 1 (primary)               Region 2 (secondary)
-+----------------------+          +---------------------------+
-| Existing VPC         |          | New VPC (10.30.0.0/16)    |
-| (10.50.0.0/16)       |          |                           |
-|                      | VPC      | +---------------------+   |
-| ElastiCache Redis    | Peering  | | Lambda              |   |
-| port 6379            +<-------->+ | redis-connector     |   |
-|                      |          | | Node.js 18.x        |   |
-| Route: 10.30.0.0/16  |          | | VPC-attached        |   |
-| --> peering conn     |          | +---------------------+   |
-+----------------------+          |                           |
-                                  | +---------------------+   |
-                                  | | API Gateway (REST)  |   |
-                                  | | + Lambda Function   |   |
-                                  | | URL (CORS enabled)  |   |
-                                  | +---------------------+   |
-                                  |                           |
-                                  | Route: 10.50.0.0/16       |
-                                  | --> peering conn          |
-                                  +---------------------------+
-```
+![Architecture](./architecture.png)
 
 ## What It Provisions
 
-**`main.tf` — Network layer**
-- Region 2 VPC, subnet, and route table
-- VPC peering connection between Region 1 and Region 2
-- Bidirectional routes in both regions for cross-region traffic
+**Network layer (`main.tf`)**
 
-**`components/main.tf` — Application layer**
+- Secondary region VPC, subnet, and route table
+- VPC peering connection between the primary and secondary regions
+- Bidirectional routes in both regions so traffic can flow either way over the peering link
+
+**Application layer (`components/main.tf`)**
+
 - Security group allowing TCP 6379 (Redis) inbound
 - IAM execution role with VPC access permissions
-- Lambda function (`redis-connector`) deployed inside Region 2 VPC
+- Lambda function (`redis-connector`) deployed inside the secondary region VPC
 - Lambda Function URL with CORS enabled
-- API Gateway REST API proxied to Lambda
+- API Gateway REST API proxied to the Lambda
 
 ## Stack
 
 Terraform 1.x · AWS Lambda (Node.js 18.x) · VPC Peering · ElastiCache Redis · API Gateway · IAM · CloudWatch Logs
 
-## Repository Layout
-
-```
-vpc-peering-redis-connector/
-├── main.tf                     # Network foundation: VPC, subnets, peering, routes
-├── components/
-│   └── main.tf                 # Lambda, API Gateway, security group, IAM
-├── .gitignore
-└── README.md
-```
-
-> `lambda_function_payload.zip` is not checked in. Build and place it in the root before deploying.
-
 ## Prerequisites
 
 - Terraform >= 1.0
 - AWS CLI configured with access to both regions
-- Existing Region 1 VPC with an ElastiCache Redis cluster running on port 6379
-- `lambda_function_payload.zip` containing the Node.js Redis connector handler
+- An existing primary-region VPC with an ElastiCache Redis cluster running on port 6379
+- `lambda_function_payload.zip` containing the Node.js Redis connector handler placed in the repo root before applying (not checked in)
 
 ## Deployment
 
@@ -78,7 +48,7 @@ Outputs include the VPC peering connection ID, Lambda Function URL, API Gateway 
 
 ## Testing
 
-Test the Lambda Function URL:
+Lambda Function URL:
 
 ```bash
 curl -X POST https://<lambda-url>/resource \
@@ -86,7 +56,7 @@ curl -X POST https://<lambda-url>/resource \
   -d '{"command":"GET","key":"mykey"}'
 ```
 
-Test via API Gateway:
+API Gateway:
 
 ```bash
 curl -X POST https://<api-id>.execute-api.<region>.amazonaws.com/prod/resource \
@@ -94,7 +64,7 @@ curl -X POST https://<api-id>.execute-api.<region>.amazonaws.com/prod/resource \
   -d '{"command":"SET","key":"mykey","value":"myvalue"}'
 ```
 
-Verify peering connection is active:
+Verify the peering connection is active:
 
 ```bash
 aws ec2 describe-vpc-peering-connections \
@@ -106,6 +76,6 @@ aws ec2 describe-vpc-peering-connections \
 
 - CORS is currently set to `*`. Restrict to specific origins before moving to production.
 - API Gateway has no authorizer configured. Add IAM or Cognito authorization for production use.
-- Redis credentials are passed as Lambda environment variables. Move to AWS Secrets Manager for production.
-- The secondary region subnet (`10.30.1.0/24`) is a single AZ. Add a second subnet and update the Lambda VPC config for high availability.
+- Redis credentials are passed as Lambda environment variables. Move them to AWS Secrets Manager for anything beyond a development setup.
+- The secondary region uses a single subnet in one AZ. Add a second subnet and update the Lambda VPC config for high availability.
 - VPC Flow Logs are not enabled. Add them for network-level visibility in production.
