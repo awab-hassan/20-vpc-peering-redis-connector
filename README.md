@@ -1,8 +1,6 @@
 # Project 20: VPC Peering Redis Connector
 
-A Terraform module that sets up multi-region VPC peering and deploys a VPC-attached Node.js Lambda in the secondary region as a private connector to an ElastiCache Redis cluster running in the primary region. The Lambda is exposed through both an API Gateway REST endpoint and a direct Lambda Function URL. All cross-region traffic stays on AWS's private network with no public internet exposure.
-
-The Terraform is split into two layers: the network foundation (VPCs, subnets, peering, routes) and the application layer (Lambda, IAM, API Gateway). Keeping these separate makes it easier to reuse the network layer for other cross-region workloads.
+A Terraform module that sets up multi-region VPC peering setup that will be used to establic connection between lambda deployed in second region to connect elasticache redis deployed in region 1. 
 
 ## Architecture
 
