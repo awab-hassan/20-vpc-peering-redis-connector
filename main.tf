@@ -1,13 +1,3 @@
-provider "aws" {
-  alias  = "region1"
-  region = "xx-region-1"
-}
-
-provider "aws" {
-  alias  = "region2"
-  region = "xx-region-2"
-}
-
 # Reference existing Region 1 VPC
 data "aws_vpc" "region1_vpc" {
   provider = aws.region1
