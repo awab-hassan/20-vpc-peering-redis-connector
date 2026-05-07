@@ -1,17 +1,3 @@
-# Variables for configuration:
-variable "hongkong_vpc_cidr" {
-  description = "CIDR block for the Region 2 VPC"
-  type        = string
-  default     = "10.30.0.0/16"
-}
-
-variable "tokyo_vpc_id" {
-  description = "ID of the existing Region 1 VPC"
-  type        = string
-  default     = "vpc-039181ece9d979587"
-}
-
-# Configure AWS providers for both regions
 provider "aws" {
   alias  = "tokyo"
   region = "xx-region-1"
